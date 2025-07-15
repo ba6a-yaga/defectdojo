@@ -79,7 +79,7 @@ else:
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': 'defectdojo',
             'USER': 'defectdojo',
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'defectdojo_password_123'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'defectdojo'),
             'HOST': os.environ.get('DB_HOST', 'db'),
             'PORT': os.environ.get('DB_PORT', '5432'),
         }
