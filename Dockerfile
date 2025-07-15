@@ -1,15 +1,18 @@
 # Multi-stage build для безопасности
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 # Установка системных зависимостей
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    libpq-dev \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc=4:10.2.1-1+deb11u1 \
+    g++=4:10.2.1-1+deb11u1 \
+    libpq-dev=13.9-1+deb11u1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Создание пользователя без привилегий
 RUN groupadd -r defectdojo && useradd -r -g defectdojo defectdojo
+
+# Установка рабочей директории
+WORKDIR /app
 
 # Установка Python зависимостей
 COPY requirements.txt .
@@ -19,8 +22,8 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 FROM python:3.11-slim
 
 # Установка runtime зависимостей
-RUN apt-get update && apt-get install -y \
-    libpq5 \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5=13.9-1+deb11u1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Копирование пользователя
