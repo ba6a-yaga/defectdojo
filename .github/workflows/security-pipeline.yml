@@ -8,6 +8,12 @@ on:
   schedule:
     - cron: '0 2 * * *'  # Ежедневное сканирование в 2:00
 
+# Добавляем permissions для Code Scanning
+permissions:
+  security-events: write
+  actions: read
+  contents: read
+
 env:
   DOCKER_IMAGE: defectdojo/defect-dojo-django
   DOCKER_TAG: latest
@@ -176,6 +182,14 @@ jobs:
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: 'trivy-results.sarif'
+      continue-on-error: true  # Добавляем continue-on-error
+      
+    - name: Upload Trivy results as artifact (fallback)
+      uses: actions/upload-artifact@v4
+      with:
+        name: trivy-results
+        path: trivy-results.sarif
+      if: always()  # Всегда выполняем как fallback
 
   # Deploy to Cloud
   deploy:
