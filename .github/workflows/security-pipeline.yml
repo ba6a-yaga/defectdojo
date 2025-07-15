@@ -142,6 +142,8 @@ jobs:
       run: |
         # Используем собранный образ с переменными окружения для тестового режима
         docker run -d --name test-app -p 8000:8000 \
+          --ulimit nofile=65536:65536 \
+          --ulimit nproc=32768:32768 \
           -e DEBUG=True \
           -e ALLOWED_HOSTS=localhost,127.0.0.1 \
           -e DB_ENGINE=django.db.backends.sqlite3 \

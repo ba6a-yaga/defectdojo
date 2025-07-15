@@ -57,6 +57,6 @@ $PYTHON_CMD manage.py collectstatic --noinput || true
 
 # Запускаем сервер
 echo "🌐 Starting Django development server..."
-# Всегда отключаем автоперезагрузку для стабильности
-echo "🔒 Disabling auto-reload for stability"
-$PYTHON_CMD manage.py runserver 0.0.0.0:8000 --noreload 
+# Запускаем Django в однопоточном режиме
+echo "🔒 Starting Django in single-threaded mode"
+$PYTHON_CMD manage.py runserver 0.0.0.0:8000 --noreload --verbosity=0 --nothreading 
