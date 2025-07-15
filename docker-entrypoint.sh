@@ -57,10 +57,6 @@ $PYTHON_CMD manage.py collectstatic --noinput || true
 
 # Запускаем сервер
 echo "🌐 Starting Django development server..."
-# Отключаем автоперезагрузку для DAST тестов
-if [ "$DAST_TESTING" = "true" ]; then
-    echo "🔒 Running in DAST mode - disabling auto-reload"
-    $PYTHON_CMD manage.py runserver 0.0.0.0:8000 --noreload --verbosity=0
-else
-    $PYTHON_CMD manage.py runserver 0.0.0.0:8000
-fi 
+# Всегда отключаем автоперезагрузку для стабильности
+echo "🔒 Disabling auto-reload for stability"
+$PYTHON_CMD manage.py runserver 0.0.0.0:8000 --noreload 

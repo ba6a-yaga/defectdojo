@@ -42,11 +42,9 @@ RUN ln -sf /usr/local/bin/python /usr/bin/python \
 # Экспорт порта
 EXPOSE 8000
 
-# Скрипты запуска
+# Скрипт запуска
 COPY docker-entrypoint.sh /usr/local/bin/
-COPY docker-entrypoint-dast.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
-    && chmod +x /usr/local/bin/docker-entrypoint-dast.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Переключение на пользователя приложения
 USER appuser
