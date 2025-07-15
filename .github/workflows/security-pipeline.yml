@@ -357,11 +357,23 @@ jobs:
           # Проверяем, существует ли уже репозиторий
           if [ ! -d ".git" ]; then
             echo "Клонирование репозитория..."
-            git clone git@github.com:ba6a-yaga/defectdojo.git .
+            # Попытка клонирования через SSH
+            if git clone git@github.com:ba6a-yaga/defectdojo.git .; then
+              echo "✅ Репозиторий клонирован через SSH"
+            else
+              echo "❌ SSH клонирование не удалось, используем HTTPS"
+              git clone https://github.com/ba6a-yaga/defectdojo.git .
+            fi
           else
             echo "Обновление существующего репозитория..."
-            git remote set-url origin git@github.com:ba6a-yaga/defectdojo.git
-            git fetch origin
+            # Попытка обновления через SSH
+            if git remote set-url origin git@github.com:ba6a-yaga/defectdojo.git && git fetch origin; then
+              echo "✅ Репозиторий обновлен через SSH"
+            else
+              echo "❌ SSH обновление не удалось, используем HTTPS"
+              git remote set-url origin https://github.com/ba6a-yaga/defectdojo.git
+              git fetch origin
+            fi
             git reset --hard origin/main
           fi
           
