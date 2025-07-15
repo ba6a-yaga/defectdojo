@@ -57,6 +57,7 @@ jobs:
       with:
         name: sast-results
         path: ${{ env.SCAN_RESULTS_DIR }}/
+        retention-days: 7
 
   # Build - Сборка приложения
   build:
@@ -102,6 +103,7 @@ jobs:
       with:
         name: trivy-results
         path: trivy-results.sarif
+        retention-days: 7
       if: always()
 
   # DAST - Динамический анализ безопасности
@@ -224,6 +226,7 @@ jobs:
         exclude: |
           **/node_modules/**
           **/vendor/**
+        retention-days: 7
       if: always()
       
     - name: Cleanup test container
@@ -261,6 +264,7 @@ jobs:
       with:
         name: security-check-results
         path: ${{ env.SCAN_RESULTS_DIR }}/
+        retention-days: 7
       if: always()
 
   # Security Gateway

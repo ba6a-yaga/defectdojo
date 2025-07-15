@@ -27,9 +27,23 @@ class SecurityGateway:
         """Анализ результатов SAST сканирования"""
         print("🔍 Анализ SAST результатов...")
         
+        # Ищем SAST результаты в различных местах
+        sast_dirs = [
+            self.results_dir / "sast-results",
+            self.results_dir / "sast-results" / "security-results",
+            self.results_dir
+        ]
+        
         # Bandit
-        bandit_file = self.results_dir / "bandit-results.json"
-        if bandit_file.exists():
+        bandit_file = None
+        for sast_dir in sast_dirs:
+            if sast_dir.exists():
+                potential_bandit = sast_dir / "bandit-results.json"
+                if potential_bandit.exists():
+                    bandit_file = potential_bandit
+                    break
+        
+        if bandit_file and bandit_file.exists():
             try:
                 print(f"📄 Анализ файла Bandit: {bandit_file}")
                 with open(bandit_file, 'r') as f:
@@ -62,10 +76,22 @@ class SecurityGateway:
                 print(f"❌ Ошибка при анализе Bandit: {e}")
         else:
             print("⚠️ Файл Bandit не найден")
+            print("🔍 Искал в директориях:")
+            for sast_dir in sast_dirs:
+                print(f"  - {sast_dir}")
+                if sast_dir.exists():
+                    print(f"    Содержимое: {list(sast_dir.iterdir())}")
         
         # Semgrep
-        semgrep_file = self.results_dir / "semgrep-results.json"
-        if semgrep_file.exists():
+        semgrep_file = None
+        for sast_dir in sast_dirs:
+            if sast_dir.exists():
+                potential_semgrep = sast_dir / "semgrep-results.json"
+                if potential_semgrep.exists():
+                    semgrep_file = potential_semgrep
+                    break
+        
+        if semgrep_file and semgrep_file.exists():
             try:
                 with open(semgrep_file, 'r') as f:
                     semgrep_data = json.load(f)
@@ -123,6 +149,11 @@ class SecurityGateway:
         zap_scan_dir = self.results_dir / "zap-scan-results"
         if zap_scan_dir.exists():
             zap_files.extend(list(zap_scan_dir.glob("*.json")))
+        
+        # Поиск в dast-results артефакте
+        dast_dir = self.results_dir / "dast-results"
+        if dast_dir.exists():
+            zap_files.extend(list(dast_dir.glob("*.json")))
         
         # Убираем дубликаты по полному пути
         zap_files = list(set([str(f) for f in zap_files]))
