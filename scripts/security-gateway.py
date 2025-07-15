@@ -84,8 +84,29 @@ class SecurityGateway:
                 with open(zap_files[0], 'r') as f:
                     zap_data = json.load(f)
                     alerts = zap_data.get('alerts', [])
+                    
+                    # Анализ конкретных уязвимостей
+                    spectre_count = 0
+                    http_method_count = 0
+                    
                     for alert in alerts:
                         risk = alert.get('risk', 'Medium')
+                        alert_id = alert.get('id', '')
+                        alert_name = alert.get('name', '')
+                        
+                        # Обработка Spectre уязвимости (90004)
+                        if alert_id == '90004' or 'Spectre' in alert_name:
+                            spectre_count += 1
+                            self.security_report['medium_vulnerabilities'] += 1
+                            continue
+                        
+                        # Обработка небезопасных HTTP методов (90028)
+                        if alert_id == '90028' or 'Insecure HTTP Method' in alert_name:
+                            http_method_count += 1
+                            self.security_report['medium_vulnerabilities'] += 1
+                            continue
+                        
+                        # Общая обработка по уровню риска
                         if risk == 'High':
                             self.security_report['high_vulnerabilities'] += 1
                         elif risk == 'Medium':
@@ -94,11 +115,23 @@ class SecurityGateway:
                             self.security_report['low_vulnerabilities'] += 1
                     
                     if alerts:
+                        recommendations = []
+                        if spectre_count > 0:
+                            recommendations.append(f"Обнаружено {spectre_count} предупреждений Spectre - рекомендуется добавить заголовки безопасности")
+                        if http_method_count > 0:
+                            recommendations.append(f"Обнаружено {http_method_count} небезопасных HTTP методов - рекомендуется ограничить доступные методы")
+                        
+                        if recommendations:
+                            self.security_report['recommendations'].extend(recommendations)
+                        
                         self.security_report['recommendations'].append(
                             f"OWASP ZAP обнаружил {len(alerts)} уязвимостей в приложении"
                         )
             except Exception as e:
                 print(f"Ошибка при анализе ZAP: {e}")
+                # Попытка найти другие файлы ZAP
+                for file in self.results_dir.glob("*zap*"):
+                    print(f"Найден файл ZAP: {file}")
         
         # Nuclei результаты
         nuclei_files = list(self.results_dir.glob("nuclei-*.json"))
