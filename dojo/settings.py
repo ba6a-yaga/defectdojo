@@ -64,16 +64,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'dojo.wsgi.application'
 
 # Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'defectdojo',
-        'USER': 'defectdojo',
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'defectdojo_password_123'),
-        'HOST': os.environ.get('DB_HOST', 'db'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+DB_ENGINE = os.environ.get('DB_ENGINE', 'django.db.backends.postgresql')
+
+if DB_ENGINE == 'django.db.backends.sqlite3':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.environ.get('DB_NAME', BASE_DIR / 'db.sqlite3'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'defectdojo',
+            'USER': 'defectdojo',
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'defectdojo_password_123'),
+            'HOST': os.environ.get('DB_HOST', 'db'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

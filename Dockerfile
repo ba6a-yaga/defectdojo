@@ -26,5 +26,9 @@ RUN mkdir -p /app/logs /app/static /app/media
 # Экспорт порта
 EXPOSE 8000
 
+# Скрипт запуска с инициализацией БД
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Запуск приложения
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"] 
+CMD ["/usr/local/bin/docker-entrypoint.sh"] 
