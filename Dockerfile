@@ -3,9 +3,9 @@ FROM python:3.11-slim AS builder
 
 # Установка системных зависимостей
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc=4:10.2.1-1+deb11u1 \
-    g++=4:10.2.1-1+deb11u1 \
-    libpq-dev=13.9-1+deb11u1 \
+    gcc \
+    g++ \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Создание пользователя без привилегий
@@ -23,7 +23,7 @@ FROM python:3.11-slim
 
 # Установка runtime зависимостей
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5=13.9-1+deb11u1 \
+    libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
 # Копирование пользователя
