@@ -60,7 +60,7 @@ echo "🌐 Starting Django development server..."
 # Отключаем автоперезагрузку для DAST тестов
 if [ "$DAST_TESTING" = "true" ]; then
     echo "🔒 Running in DAST mode - disabling auto-reload"
-    exec $PYTHON_CMD manage.py runserver 0.0.0.0:8000 --noreload
+    $PYTHON_CMD manage.py runserver 0.0.0.0:8000 --noreload --verbosity=0
 else
-    exec $PYTHON_CMD manage.py runserver 0.0.0.0:8000
+    $PYTHON_CMD manage.py runserver 0.0.0.0:8000
 fi 

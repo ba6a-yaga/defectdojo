@@ -57,4 +57,5 @@ $PYTHON_CMD manage.py collectstatic --noinput || true
 
 # Запускаем сервер без автоперезагрузки для DAST
 echo "🌐 Starting Django development server for DAST (no auto-reload)..."
-exec $PYTHON_CMD manage.py runserver 0.0.0.0:8000 --noreload 
+# Используем прямой запуск без exec для избежания проблем с правами
+$PYTHON_CMD manage.py runserver 0.0.0.0:8000 --noreload --verbosity=0 
