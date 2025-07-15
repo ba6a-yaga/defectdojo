@@ -166,15 +166,10 @@ jobs:
         docker exec test-app ps aux || echo "Cannot check processes"
         
         echo "Checking Python permissions in container..."
-        docker exec test-app ls -la /usr/local/bin/python* || echo "Cannot check Python permissions"
+        docker exec test-app ls -la /usr/local/bin/python || echo "Cannot check Python permissions"
         
         echo "Checking entrypoint script permissions..."
-        docker exec test-app ls -la /usr/local/bin/docker-entrypoint* || echo "Cannot check entrypoint permissions"
-        
-        echo "Running Python test in container..."
-        docker cp test-python.sh test-app:/app/
-        docker exec test-app chmod +x /app/test-python.sh
-        docker exec test-app /app/test-python.sh || echo "Python test failed"
+        docker exec test-app ls -la /usr/local/bin/docker-entrypoint-dast.sh || echo "Cannot check entrypoint permissions"
         
         echo "Testing application health..."
         for i in {1..10}; do

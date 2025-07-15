@@ -43,10 +43,8 @@ EXPOSE 8000
 # Скрипты запуска
 COPY docker-entrypoint.sh /usr/local/bin/
 COPY docker-entrypoint-dast.sh /usr/local/bin/
-COPY test-python.sh /app/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
-    && chmod +x /usr/local/bin/docker-entrypoint-dast.sh \
-    && chmod +x /app/test-python.sh
+    && chmod +x /usr/local/bin/docker-entrypoint-dast.sh
 
 # Переключение на пользователя приложения
 USER appuser
