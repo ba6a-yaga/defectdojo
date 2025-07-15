@@ -326,26 +326,52 @@ jobs:
       run: |
         ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
         
+    - name: Setup Git on server
+      run: |
+        echo "🔧 Настройка Git на сервере..."
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          # Настройка Git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          # Добавление GitHub в known_hosts
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts || echo "GitHub уже в known_hosts"
+          
+          echo "✅ Git настроен на сервере"
+        EOF
+        
     - name: Deploy to production server
       run: |
         echo "🚀 Deploying to production server..."
         
         # Подключение к серверу и выполнение деплоя
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-          # Переход в директорию проекта
+          # Создание директории проекта если не существует
+          sudo mkdir -p /opt/sib-Diplom-Track-DevSecOps
+          sudo chown $USER:$USER /opt/sib-Diplom-Track-DevSecOps
           cd /opt/sib-Diplom-Track-DevSecOps
           
-          # Настройка Git для работы с репозиторием
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
+          # Проверяем, существует ли уже репозиторий
+          if [ ! -d ".git" ]; then
+            echo "Клонирование репозитория..."
+            git clone git@github.com:ba6a-yaga/defectdojo.git .
+          else
+            echo "Обновление существующего репозитория..."
+            git remote set-url origin git@github.com:ba6a-yaga/defectdojo.git
+            git fetch origin
+            git reset --hard origin/main
+          fi
           
-          # Получение последних изменений из правильного репозитория
-          git remote set-url origin git@github.com:ba6a-yaga/defectdojo.git
-          git fetch origin
-          git reset --hard origin/main
+          # Диагностика: проверяем занятые порты
+          echo "🔍 Проверка занятых портов:"
+          netstat -tlnp | grep -E ':(80|443|8000|9000)' || echo "Порты 80, 443, 8000, 9000 свободны"
           
-          # Остановка текущих контейнеров
-          docker-compose down
+          # Диагностика: проверяем запущенные контейнеры
+          echo "🐳 Проверка запущенных контейнеров:"
+          docker ps
+          
+          # Остановка текущих контейнеров если они запущены
+          docker-compose down || echo "Контейнеры не запущены"
           
           # Пересборка образов
           docker-compose build --no-cache
@@ -354,7 +380,13 @@ jobs:
           docker-compose up -d
           
           # Проверка статуса
+          echo "📊 Статус контейнеров после деплоя:"
           docker-compose ps
+          
+          # Проверка доступности приложения
+          echo "🏥 Проверка health endpoint..."
+          sleep 10
+          curl -f http://localhost:8000/health/ && echo "✅ Приложение доступно" || echo "❌ Приложение недоступно"
           
           # Очистка неиспользуемых образов
           docker image prune -f
