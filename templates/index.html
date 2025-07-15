@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project_title }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f7f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 60px auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 40px 32px 32px 32px;
+            text-align: center;
+        }
+        h1 {
+            color: #2d3a4b;
+            margin-bottom: 16px;
+        }
+        .author {
+            color: #4e6e8e;
+            font-size: 1.2em;
+            margin-bottom: 24px;
+        }
+        .desc {
+            color: #333;
+            font-size: 1.1em;
+            margin-bottom: 32px;
+        }
+        .badge {
+            display: inline-block;
+            background: #4e6e8e;
+            color: #fff;
+            border-radius: 8px;
+            padding: 6px 18px;
+            font-size: 1em;
+            margin-bottom: 8px;
+        }
+        .links a {
+            color: #2d3a4b;
+            text-decoration: none;
+            margin: 0 10px;
+            font-weight: 500;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="badge">DevSecOps Дипломный проект</div>
+        <h1>{{ project_title }}</h1>
+        <div class="author">Автор: <b>{{ author }}</b></div>
+        <div class="desc">{{ description }}</div>
+        <div class="links">
+            <a href="/api/">API</a> |
+            <a href="/health/">Health Check</a> |
+            <a href="/admin/">Админка</a>
+        </div>
+    </div>
+</body>
+</html> 
