@@ -149,7 +149,6 @@ jobs:
           -e SECURE_SSL_REDIRECT=False \
           -e SECURE_BROWSER_XSS_FILTER=False \
           -e SECURE_CONTENT_TYPE_NOSNIFF=False \
-  
           ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
         
         echo "Waiting for application to start..."
