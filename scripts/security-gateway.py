@@ -77,21 +77,37 @@ class SecurityGateway:
         """Анализ результатов DAST сканирования"""
         print("🔍 Анализ DAST результатов...")
         
-        # ZAP результаты - ищем report_json.json
+        # ZAP результаты - ищем различные возможные имена файлов
         zap_files = []
         
-        # Поиск report_json.json в корневой директории
-        zap_files.extend(list(self.results_dir.glob("report_json.json")))
+        # Поиск стандартных имен файлов ZAP
+        possible_names = [
+            "report_json.json",
+            "zap_scan.json", 
+            "zap-scan-results.json",
+            "zap-report.json",
+            "scan-results.json"
+        ]
+        
+        for name in possible_names:
+            zap_files.extend(list(self.results_dir.glob(name)))
         
         # Поиск в поддиректориях
         for subdir in self.results_dir.iterdir():
             if subdir.is_dir():
-                zap_files.extend(list(subdir.glob("report_json.json")))
+                for name in possible_names:
+                    zap_files.extend(list(subdir.glob(name)))
         
         # Поиск в .zap директории
         zap_dir = self.results_dir / ".zap"
         if zap_dir.exists():
             zap_files.extend(list(zap_dir.glob("*.json")))
+        
+        # Поиск файлов с zap в имени
+        zap_files.extend(list(self.results_dir.glob("*zap*.json")))
+        
+        # Убираем дубликаты
+        zap_files = list(set(zap_files))
         
         print(f"Найдено {len(zap_files)} файлов ZAP: {[f.name for f in zap_files]}")
         

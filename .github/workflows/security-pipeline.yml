@@ -180,11 +180,13 @@ jobs:
         EOF
       
     - name: Setup OWASP ZAP
-      uses: zaproxy/action-full-scan@v0.8.0
+      uses: zaproxy/action-full-scan@v0.12.0
       with:
         target: 'http://localhost:8000'
         rules_file_name: '.zap/rules.tsv'
         cmd_options: '-a -j'
+        artifact_name: 'zap-scan-results'
+        allow_issue_writing: false
       continue-on-error: true
         
     - name: Run Nuclei
@@ -197,11 +199,27 @@ jobs:
     - name: Find ZAP files
       run: |
         echo "🔍 Поиск файлов ZAP..."
-        find . -name "*.json" -type f | head -20
+        echo "📄 Все JSON файлы:"
+        find . -name "*.json" -type f
+        echo ""
+        echo "📄 Файлы с zap в имени:"
+        find . -name "*zap*" -type f
+        echo ""
+        echo "📄 Файлы с scan в имени:"
+        find . -name "*scan*" -type f
+        echo ""
         echo "📁 Содержимое текущей директории:"
         ls -la
+        echo ""
         echo "📁 Содержимое .zap директории:"
         ls -la .zap/ || echo "Директория .zap не найдена"
+      if: always()
+        
+    - name: Upload ZAP results manually
+      uses: actions/upload-artifact@v4
+      with:
+        name: zap-scan-results
+        path: 'report_json.json'
       if: always()
         
     - name: Upload DAST results
@@ -209,13 +227,6 @@ jobs:
       with:
         name: dast-results
         path: '*.json'
-      if: always()
-      
-    - name: Upload ZAP results
-      uses: actions/upload-artifact@v4
-      with:
-        name: zap-results
-        path: 'report_json.json'
       if: always()
       
     - name: Cleanup test container
