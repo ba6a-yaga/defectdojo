@@ -219,7 +219,11 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: dast-results
-        path: '*.json'
+        path: |
+          nuclei-*.json
+        exclude: |
+          **/node_modules/**
+          **/vendor/**
       if: always()
       
     - name: Cleanup test container

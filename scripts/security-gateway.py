@@ -31,24 +31,37 @@ class SecurityGateway:
         bandit_file = self.results_dir / "bandit-results.json"
         if bandit_file.exists():
             try:
+                print(f"📄 Анализ файла Bandit: {bandit_file}")
                 with open(bandit_file, 'r') as f:
                     bandit_data = json.load(f)
                     issues = bandit_data.get('results', [])
+                    print(f"📊 Найдено {len(issues)} проблем в Bandit отчете")
+                    
                     for issue in issues:
                         severity = issue.get('issue_severity', 'medium')
+                        issue_text = issue.get('issue_text', 'Unknown')
+                        print(f"🔍 Проблема: {issue_text} (Severity: {severity})")
+                        
                         if severity == 'HIGH':
                             self.security_report['high_vulnerabilities'] += 1
+                            print(f"  🔴 Высокая уязвимость")
                         elif severity == 'MEDIUM':
                             self.security_report['medium_vulnerabilities'] += 1
+                            print(f"  🟡 Средняя уязвимость")
                         elif severity == 'LOW':
                             self.security_report['low_vulnerabilities'] += 1
+                            print(f"  🟢 Низкая уязвимость")
                     
                     if issues:
                         self.security_report['recommendations'].append(
                             f"Bandit обнаружил {len(issues)} проблем безопасности в коде"
                         )
+                    else:
+                        print("ℹ️ Проблем в Bandit отчете не найдено")
             except Exception as e:
-                print(f"Ошибка при анализе Bandit: {e}")
+                print(f"❌ Ошибка при анализе Bandit: {e}")
+        else:
+            print("⚠️ Файл Bandit не найден")
         
         # Semgrep
         semgrep_file = self.results_dir / "semgrep-results.json"
@@ -106,16 +119,43 @@ class SecurityGateway:
         # Поиск файлов с zap в имени
         zap_files.extend(list(self.results_dir.glob("*zap*.json")))
         
-        # Убираем дубликаты
-        zap_files = list(set(zap_files))
+        # Поиск в zap-scan-results артефакте
+        zap_scan_dir = self.results_dir / "zap-scan-results"
+        if zap_scan_dir.exists():
+            zap_files.extend(list(zap_scan_dir.glob("*.json")))
         
-        print(f"Найдено {len(zap_files)} файлов ZAP: {[f.name for f in zap_files]}")
+        # Убираем дубликаты по полному пути
+        zap_files = list(set([str(f) for f in zap_files]))
+        zap_files = [Path(f) for f in zap_files]
+        
+        print(f"Найдено {len(zap_files)} файлов ZAP:")
+        for i, file in enumerate(zap_files, 1):
+            print(f"  {i}. {file.name} (путь: {file})")
         
         if zap_files:
+            # Проверяем все найденные файлы
+            for i, zap_file in enumerate(zap_files):
+                print(f"📄 Проверка файла ZAP #{i+1}: {zap_file}")
+                try:
+                    with open(zap_file, 'r') as f:
+                        content = f.read()
+                        print(f"  📏 Размер файла: {len(content)} байт")
+                        if len(content) > 0:
+                            zap_data = json.loads(content)
+                            alerts = zap_data.get('alerts', [])
+                            print(f"  📊 Уязвимостей в файле: {len(alerts)}")
+                        else:
+                            print(f"  ⚠️ Файл пустой")
+                except Exception as e:
+                    print(f"  ❌ Ошибка чтения файла: {e}")
+            
+            # Анализируем первый файл
             try:
+                print(f"📄 Анализ основного файла ZAP: {zap_files[0]}")
                 with open(zap_files[0], 'r') as f:
                     zap_data = json.load(f)
                     alerts = zap_data.get('alerts', [])
+                    print(f"📊 Найдено {len(alerts)} уязвимостей в ZAP отчете")
                     
                     # Анализ конкретных уязвимостей
                     spectre_count = 0
@@ -126,25 +166,32 @@ class SecurityGateway:
                         alert_id = alert.get('id', '')
                         alert_name = alert.get('name', '')
                         
+                        print(f"🔍 Уязвимость: {alert_name} (ID: {alert_id}, Risk: {risk})")
+                        
                         # Обработка Spectre уязвимости (90004)
                         if alert_id == '90004' or 'Spectre' in alert_name:
                             spectre_count += 1
                             self.security_report['medium_vulnerabilities'] += 1
+                            print(f"  ⚠️ Spectre уязвимость обнаружена")
                             continue
                         
                         # Обработка небезопасных HTTP методов (90028)
                         if alert_id == '90028' or 'Insecure HTTP Method' in alert_name:
                             http_method_count += 1
                             self.security_report['medium_vulnerabilities'] += 1
+                            print(f"  ⚠️ Небезопасный HTTP метод обнаружен")
                             continue
                         
                         # Общая обработка по уровню риска
                         if risk == 'High':
                             self.security_report['high_vulnerabilities'] += 1
+                            print(f"  🔴 Высокая уязвимость")
                         elif risk == 'Medium':
                             self.security_report['medium_vulnerabilities'] += 1
+                            print(f"  🟡 Средняя уязвимость")
                         elif risk == 'Low':
                             self.security_report['low_vulnerabilities'] += 1
+                            print(f"  🟢 Низкая уязвимость")
                     
                     if alerts:
                         recommendations = []
@@ -159,8 +206,10 @@ class SecurityGateway:
                         self.security_report['recommendations'].append(
                             f"OWASP ZAP обнаружил {len(alerts)} уязвимостей в приложении"
                         )
+                    else:
+                        print("ℹ️ Уязвимостей в ZAP отчете не найдено")
             except Exception as e:
-                print(f"Ошибка при анализе ZAP: {e}")
+                print(f"❌ Ошибка при анализе ZAP: {e}")
                 # Попытка найти другие файлы ZAP
                 for file in self.results_dir.glob("*zap*"):
                     print(f"Найден файл ZAP: {file}")
