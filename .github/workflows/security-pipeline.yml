@@ -243,15 +243,11 @@ jobs:
         ls -la .zap/ || echo "Директория .zap не найдена"
       if: always()
         
-    - name: Upload DAST results
+    - name: Upload Nuclei results
       uses: actions/upload-artifact@v4
       with:
-        name: dast-results
-        path: |
-          report_json.json
-          report_html.html
-          report_md.md
-          nuclei-results.json
+        name: nuclei-results
+        path: nuclei-results.json
         retention-days: 7
       if: always()
       

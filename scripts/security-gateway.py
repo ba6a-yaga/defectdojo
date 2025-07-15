@@ -171,10 +171,10 @@ class SecurityGateway:
         if zap_scan_dir.exists():
             zap_files.extend(list(zap_scan_dir.glob("*.json")))
         
-        # Поиск в dast-results артефакте
-        dast_dir = self.results_dir / "dast-results"
-        if dast_dir.exists():
-            zap_files.extend(list(dast_dir.glob("*.json")))
+        # Поиск в nuclei-results артефакте
+        nuclei_dir = self.results_dir / "nuclei-results"
+        if nuclei_dir.exists():
+            zap_files.extend(list(nuclei_dir.glob("*.json")))
         
         # Убираем дубликаты по полному пути
         zap_files = list(set([str(f) for f in zap_files]))
@@ -270,6 +270,10 @@ class SecurityGateway:
         
         # Nuclei результаты
         nuclei_files = list(self.results_dir.glob("nuclei-*.json"))
+        nuclei_dir = self.results_dir / "nuclei-results"
+        if nuclei_dir.exists():
+            nuclei_files.extend(list(nuclei_dir.glob("*.json")))
+        
         if nuclei_files:
             try:
                 with open(nuclei_files[0], 'r') as f:

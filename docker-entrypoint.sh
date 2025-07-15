@@ -9,6 +9,15 @@ if [ ! -x "$PYTHON_CMD" ]; then
     PYTHON_CMD="/usr/bin/python"
 fi
 
+# Проверяем права на выполнение
+if [ ! -x "$PYTHON_CMD" ]; then
+    echo "❌ Python не найден или нет прав на выполнение"
+    echo "Попытка исправления прав..."
+    chmod +x /usr/local/bin/python* 2>/dev/null || true
+    chmod +x /usr/bin/python* 2>/dev/null || true
+    PYTHON_CMD="/usr/local/bin/python"
+fi
+
 echo "🐍 Using Python: $PYTHON_CMD"
 
 # Проверяем тип базы данных

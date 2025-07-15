@@ -35,7 +35,9 @@ RUN mkdir -p /app/logs /app/static /app/media /app/db \
 RUN ln -sf /usr/local/bin/python /usr/bin/python \
     && ln -sf /usr/local/bin/python3 /usr/bin/python3 \
     && chmod +x /usr/bin/python \
-    && chmod +x /usr/bin/python3
+    && chmod +x /usr/bin/python3 \
+    && chmod +x /usr/local/bin/python \
+    && chmod +x /usr/local/bin/python3
 
 # Экспорт порта
 EXPOSE 8000
