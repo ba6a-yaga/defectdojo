@@ -185,6 +185,7 @@ jobs:
         target: 'http://localhost:8000'
         rules_file_name: '.zap/rules.tsv'
         cmd_options: '-a -j'
+        artifact_name: 'zap-scan-results'
       continue-on-error: true
         
     - name: Run Nuclei
@@ -193,6 +194,18 @@ jobs:
         target: 'http://localhost:8000'
         templates: 'cves,vulnerabilities,exposures'
       continue-on-error: true
+        
+    - name: Find ZAP files
+      run: |
+        echo "🔍 Поиск файлов ZAP..."
+        find . -name "*.json" -type f | head -20
+        echo "📁 Содержимое текущей директории:"
+        ls -la
+        echo "📁 Содержимое .zap директории:"
+        ls -la .zap/ || echo "Директория .zap не найдена"
+        echo "📁 Содержимое zap-scan-results:"
+        ls -la zap-scan-results/ || echo "Директория zap-scan-results не найдена"
+      if: always()
         
     - name: Upload DAST results
       uses: actions/upload-artifact@v4
@@ -205,7 +218,21 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: zap-results
-        path: 'zap-report*.json'
+        path: 'zap-scan-results/*.json'
+      if: always()
+      
+    - name: Upload ZAP results fallback
+      uses: actions/upload-artifact@v4
+      with:
+        name: zap-results-fallback
+        path: '.zap/*.json'
+      if: always()
+      
+    - name: Upload all JSON results
+      uses: actions/upload-artifact@v4
+      with:
+        name: all-json-results
+        path: '**/*.json'
       if: always()
       
     - name: Cleanup test container

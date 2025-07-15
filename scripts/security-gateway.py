@@ -77,8 +77,43 @@ class SecurityGateway:
         """Анализ результатов DAST сканирования"""
         print("🔍 Анализ DAST результатов...")
         
-        # ZAP результаты
-        zap_files = list(self.results_dir.glob("zap-report*.json"))
+        # ZAP результаты - ищем в разных местах
+        zap_files = []
+        
+        # Поиск в корневой директории
+        zap_files.extend(list(self.results_dir.glob("zap-report*.json")))
+        
+        # Поиск в поддиректориях
+        for subdir in self.results_dir.iterdir():
+            if subdir.is_dir():
+                zap_files.extend(list(subdir.glob("*.json")))
+        
+        # Поиск в .zap директории
+        zap_dir = self.results_dir / ".zap"
+        if zap_dir.exists():
+            zap_files.extend(list(zap_dir.glob("*.json")))
+        
+        # Поиск в zap-scan-results директории
+        zap_scan_dir = self.results_dir / "zap-scan-results"
+        if zap_scan_dir.exists():
+            zap_files.extend(list(zap_scan_dir.glob("*.json")))
+        
+        # Поиск во всех поддиректориях
+        for subdir in self.results_dir.rglob("*"):
+            if subdir.is_dir() and "zap" in subdir.name.lower():
+                zap_files.extend(list(subdir.glob("*.json")))
+        
+        print(f"Найдено {len(zap_files)} файлов ZAP: {[f.name for f in zap_files]}")
+        
+        # Выводим структуру директорий для диагностики
+        print("📁 Структура директорий:")
+        for item in self.results_dir.iterdir():
+            if item.is_dir():
+                print(f"  📁 {item.name}/")
+                for subitem in item.iterdir():
+                    if subitem.is_file():
+                        print(f"    📄 {subitem.name}")
+        
         if zap_files:
             try:
                 with open(zap_files[0], 'r') as f:
@@ -132,6 +167,8 @@ class SecurityGateway:
                 # Попытка найти другие файлы ZAP
                 for file in self.results_dir.glob("*zap*"):
                     print(f"Найден файл ZAP: {file}")
+        else:
+            print("⚠️ Файлы ZAP не найдены")
         
         # Nuclei результаты
         nuclei_files = list(self.results_dir.glob("nuclei-*.json"))
