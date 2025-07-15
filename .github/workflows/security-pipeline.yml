@@ -217,7 +217,9 @@ jobs:
     - name: Run Nuclei
       run: |
         echo "🔍 Запуск Nuclei..."
-        ./nuclei -u http://localhost:8000 -t cves,vulnerabilities,exposures -json -o nuclei-results.json || echo "Nuclei завершился с ошибкой"
+        # Устанавливаем Nuclei
+        curl -sfL https://raw.githubusercontent.com/projectdiscovery/nuclei/master/v2/cmd/nuclei/install.sh | sh -s -- -b /usr/local/bin
+        nuclei -u http://localhost:8000 -t cves,vulnerabilities,exposures -json -o nuclei-results.json || echo "Nuclei завершился с ошибкой"
         echo "📄 Проверка результатов Nuclei:"
         ls -la nuclei-results.json || echo "Файл nuclei-results.json не найден"
       continue-on-error: true
