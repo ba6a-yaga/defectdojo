@@ -149,6 +149,8 @@ jobs:
           -e SECURE_SSL_REDIRECT=False \
           -e SECURE_BROWSER_XSS_FILTER=False \
           -e SECURE_CONTENT_TYPE_NOSNIFF=False \
+          -e DAST_TESTING=true \
+          --entrypoint /usr/local/bin/docker-entrypoint-dast.sh \
           ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
         
         echo "Waiting for application to start..."
@@ -159,6 +161,20 @@ jobs:
         
         echo "Checking container logs..."
         docker logs test-app || echo "No logs available"
+        
+        echo "Checking container processes..."
+        docker exec test-app ps aux || echo "Cannot check processes"
+        
+        echo "Checking Python permissions in container..."
+        docker exec test-app ls -la /usr/local/bin/python* || echo "Cannot check Python permissions"
+        
+        echo "Checking entrypoint script permissions..."
+        docker exec test-app ls -la /usr/local/bin/docker-entrypoint* || echo "Cannot check entrypoint permissions"
+        
+        echo "Running Python test in container..."
+        docker cp test-python.sh test-app:/app/
+        docker exec test-app chmod +x /app/test-python.sh
+        docker exec test-app /app/test-python.sh || echo "Python test failed"
         
         echo "Testing application health..."
         for i in {1..10}; do
@@ -204,10 +220,11 @@ jobs:
       continue-on-error: true
         
     - name: Run Nuclei
-      uses: projectdiscovery/nuclei-action@main
-      with:
-        target: 'http://localhost:8000'
-        templates: 'cves,vulnerabilities,exposures'
+      run: |
+        echo "🔍 Запуск Nuclei..."
+        ./nuclei -u http://localhost:8000 -t cves,vulnerabilities,exposures -json -o nuclei-results.json || echo "Nuclei завершился с ошибкой"
+        echo "📄 Проверка результатов Nuclei:"
+        ls -la nuclei-results.json || echo "Файл nuclei-results.json не найден"
       continue-on-error: true
         
     - name: Find ZAP files
@@ -234,10 +251,10 @@ jobs:
       with:
         name: dast-results
         path: |
-          nuclei-*.json
-        exclude: |
-          **/node_modules/**
-          **/vendor/**
+          report_json.json
+          report_html.html
+          report_md.md
+          nuclei-results.json
         retention-days: 7
       if: always()
       

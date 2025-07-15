@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Starting Django application..."
+echo "🚀 Starting Django application for DAST testing..."
 
 # Определяем путь к Python
 PYTHON_CMD="/usr/local/bin/python"
@@ -46,12 +46,6 @@ fi
 echo "📦 Collecting static files..."
 $PYTHON_CMD manage.py collectstatic --noinput || true
 
-# Запускаем сервер
-echo "🌐 Starting Django development server..."
-# Отключаем автоперезагрузку для DAST тестов
-if [ "$DAST_TESTING" = "true" ]; then
-    echo "🔒 Running in DAST mode - disabling auto-reload"
-    exec $PYTHON_CMD manage.py runserver 0.0.0.0:8000 --noreload
-else
-    exec $PYTHON_CMD manage.py runserver 0.0.0.0:8000
-fi 
+# Запускаем сервер без автоперезагрузки для DAST
+echo "🌐 Starting Django development server for DAST (no auto-reload)..."
+exec $PYTHON_CMD manage.py runserver 0.0.0.0:8000 --noreload 

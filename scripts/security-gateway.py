@@ -143,6 +143,12 @@ class SecurityGateway:
             "scan-results.json"
         ]
         
+        # Поиск в корневой директории
+        for name in possible_names:
+            root_file = Path(name)
+            if root_file.exists():
+                zap_files.append(root_file)
+        
         for name in possible_names:
             zap_files.extend(list(self.results_dir.glob(name)))
         
