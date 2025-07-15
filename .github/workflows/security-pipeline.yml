@@ -201,6 +201,13 @@ jobs:
         path: '*.json'
       if: always()
       
+    - name: Upload ZAP results separately
+      uses: actions/upload-artifact@v4
+      with:
+        name: zap-results
+        path: 'zap-report*.json'
+      if: always()
+      
     - name: Cleanup test container
       if: always()
       run: |

@@ -171,7 +171,9 @@ SECURITY_MIDDLEWARE = [
 
 # Используем расширенный middleware для продакшена
 if not DEBUG:
-    MIDDLEWARE = SECURITY_MIDDLEWARE
+    MIDDLEWARE = SECURITY_MIDDLEWARE + [
+        'dojo.middleware.SecurityMiddleware',
+    ]
 else:
     MIDDLEWARE = [
         'django.middleware.security.SecurityMiddleware',
@@ -183,6 +185,7 @@ else:
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
+        'dojo.middleware.SecurityMiddleware',
     ]
 
 # Logging
