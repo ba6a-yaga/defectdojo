@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Создание пользователя для приложения
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
 # Установка рабочей директории
 WORKDIR /app
 
@@ -20,15 +23,21 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копирование кода приложения
 COPY . .
 
-# Создание директорий
-RUN mkdir -p /app/logs /app/static /app/media
+# Создание директорий и установка прав
+RUN mkdir -p /app/logs /app/static /app/media /app/db \
+    && chown -R appuser:appuser /app \
+    && chmod +x /usr/local/bin/python \
+    && chmod +x /usr/local/bin/python3
 
 # Экспорт порта
 EXPOSE 8000
 
-# Скрипт запуска с инициализацией БД
+# Скрипт запуска
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Переключение на пользователя приложения
+USER appuser
 
 # Запуск приложения
 CMD ["/usr/local/bin/docker-entrypoint.sh"] 

@@ -9,12 +9,18 @@ services:
     environment:
       - DEBUG=True
       - SECRET_KEY=dev-secret-key-change-in-production
+      - DB_ENGINE=django.db.backends.sqlite3
+      - DB_NAME=/app/db.sqlite3
       - DB_PASSWORD=defectdojo
+      - DB_HOST=db
+      - DB_PORT=5432
       - DATABASE_URL=postgresql://defectdojo:defectdojo@db:5432/defectdojo
       - REDIS_URL=redis://redis:redis@redis:6379/0
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     volumes:
       - ./logs:/app/logs
     networks:
@@ -28,11 +34,17 @@ services:
       - POSTGRES_DB=defectdojo
       - POSTGRES_USER=defectdojo
       - POSTGRES_PASSWORD=defectdojo
+      - POSTGRES_HOST_AUTH_METHOD=md5
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - defectdojo-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U defectdojo -d defectdojo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Redis для кеширования
   redis:
@@ -54,9 +66,6 @@ services:
       - SONAR_WEB_JAVAOPTS=-Xmx512m -Xms128m
       - SONAR_CE_JAVAOPTS=-Xmx512m -Xms128m
       - SONAR_SEARCH_JAVAOPTS=-Xmx512m -Xms128m
-      - SONAR_JDBC_URL=jdbc:h2:./data/sonar
-      - SONAR_JDBC_USERNAME=sonar
-      - SONAR_JDBC_PASSWORD=sonar
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_extensions:/opt/sonarqube/extensions
