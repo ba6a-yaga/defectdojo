@@ -1,0 +1,248 @@
+name: DevSecOps Security Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * *'  # Ежедневное сканирование в 2:00
+
+env:
+  DOCKER_IMAGE: defectdojo/defect-dojo-django
+  DOCKER_TAG: latest
+  SCAN_RESULTS_DIR: security-results
+
+jobs:
+  # SAST - Статический анализ безопасности
+  sast:
+    name: SAST Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        pip install bandit semgrep safety
+        
+    - name: Run Bandit (Python SAST)
+      run: |
+        bandit -r . -f json -o $SCAN_RESULTS_DIR/bandit-results.json || true
+        
+    - name: Run Semgrep
+      run: |
+        semgrep ci --json --output $SCAN_RESULTS_DIR/semgrep-results.json
+        
+    - name: Run Safety (dependency check)
+      run: |
+        safety check --json --output $SCAN_RESULTS_DIR/safety-results.json || true
+        
+    - name: Upload SAST results
+      uses: actions/upload-artifact@v4
+      with:
+        name: sast-results
+        path: ${{ env.SCAN_RESULTS_DIR }}/
+
+  # DAST - Динамический анализ безопасности
+  dast:
+    name: DAST Analysis
+    runs-on: ubuntu-latest
+    needs: [build]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup OWASP ZAP
+      uses: zaproxy/action-full-scan@v0.8.0
+      with:
+        target: 'http://localhost:8080'
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a'
+        
+    - name: Run Nuclei
+      uses: projectdiscovery/nuclei-action@main
+      with:
+        target: 'http://localhost:8080'
+        templates: 'cves,vulnerabilities,exposures'
+        
+    - name: Upload DAST results
+      uses: actions/upload-artifact@v4
+      with:
+        name: dast-results
+        path: '*.json'
+
+  # Security Checks
+  security-checks:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run TruffleHog (secrets detection)
+      uses: trufflesecurity/trufflehog@main
+      with:
+        args: --only-verified --format json --output-file $SCAN_RESULTS_DIR/trufflehog-results.json
+        
+    - name: Run Hadolint (Dockerfile linting)
+      run: |
+        docker run --rm -i hadolint/hadolint < Dockerfile
+        
+    - name: Run Checkov (IaC security)
+      run: |
+        pip install checkov
+        checkov -d . --output json --output-file-path $SCAN_RESULTS_DIR/checkov-results.json
+        
+    - name: Upload Security Check results
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-check-results
+        path: ${{ env.SCAN_RESULTS_DIR }}/
+
+  # Security Gateway
+  security-gateway:
+    name: Security Gateway
+    runs-on: ubuntu-latest
+    needs: [sast, dast, security-checks]
+    
+    steps:
+    - name: Download all results
+      uses: actions/download-artifact@v4
+      with:
+        path: all-results/
+        
+    - name: Analyze security results
+      run: |
+        python scripts/security-gateway.py
+        
+    - name: Comment on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const results = JSON.parse(fs.readFileSync('security-report.json', 'utf8'));
+          
+          if (results.critical_vulnerabilities > 0) {
+            core.setFailed('Critical vulnerabilities detected!');
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## Security Scan Results
+            - Critical: ${results.critical_vulnerabilities}
+            - High: ${results.high_vulnerabilities}
+            - Medium: ${results.medium_vulnerabilities}
+            - Low: ${results.low_vulnerabilities}
+            
+            ${results.recommendations}`
+          });
+
+  # Build and Deploy
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker image
+      run: |
+        docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+        
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: '${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Deploy to Cloud
+  deploy:
+    name: Deploy to Cloud
+    runs-on: ubuntu-latest
+    needs: [security-gateway]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
+    - name: Add server to known hosts
+      run: |
+        ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+        
+    - name: Deploy to production server
+      run: |
+        echo "🚀 Deploying to production server..."
+        
+        # Подключение к серверу и выполнение деплоя
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          # Переход в директорию проекта
+          cd /opt/sib-Diplom-Track-DevSecOps
+          
+          # Получение последних изменений
+          git pull origin main
+          
+          # Остановка текущих контейнеров
+          docker-compose down
+          
+          # Пересборка образов
+          docker-compose build --no-cache
+          
+          # Запуск новых контейнеров
+          docker-compose up -d
+          
+          # Проверка статуса
+          docker-compose ps
+          
+          # Очистка неиспользуемых образов
+          docker image prune -f
+          
+          echo "✅ Deployment completed successfully!"
+        EOF
+        
+    - name: Health check
+      run: |
+        echo "🏥 Performing health check..."
+        sleep 30  # Ждем запуска сервисов
+        
+        # Проверка доступности приложения
+        if curl -f http://${{ secrets.SERVER_HOST }}:8000/health/; then
+          echo "✅ Application is healthy"
+        else
+          echo "❌ Application health check failed"
+          exit 1
+        fi
+        
+    - name: Notify deployment success
+      if: success()
+      run: |
+        echo "🎉 Deployment to production completed successfully!"
+        echo "Application URL: http://${{ secrets.SERVER_HOST }}:8000"
+        echo "SonarQube URL: http://${{ secrets.SERVER_HOST }}:9000" 
