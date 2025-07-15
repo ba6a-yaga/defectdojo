@@ -31,7 +31,9 @@ class SecurityGateway:
         sast_dirs = [
             self.results_dir / "sast-results",
             self.results_dir / "sast-results" / "security-results",
-            self.results_dir
+            self.results_dir,
+            Path("sast-results"),  # Прямо в корне
+            Path("security-results")  # Альтернативное имя
         ]
         
         # Bandit
@@ -81,6 +83,19 @@ class SecurityGateway:
                 print(f"  - {sast_dir}")
                 if sast_dir.exists():
                     print(f"    Содержимое: {list(sast_dir.iterdir())}")
+            
+            # Дополнительная диагностика
+            print("🔍 Поиск всех JSON файлов в проекте:")
+            for json_file in Path(".").rglob("*.json"):
+                print(f"  - {json_file}")
+            
+            print("🔍 Содержимое all-results:")
+            if self.results_dir.exists():
+                for item in self.results_dir.iterdir():
+                    print(f"  - {item}")
+                    if item.is_dir():
+                        for subitem in item.iterdir():
+                            print(f"    - {subitem}")
         
         # Semgrep
         semgrep_file = None

@@ -42,15 +42,26 @@ jobs:
         
     - name: Run Bandit (Python SAST)
       run: |
+        echo "🔍 Запуск Bandit..."
         bandit -r . -f json -o $SCAN_RESULTS_DIR/bandit-results.json || true
+        echo "📄 Проверка созданных файлов:"
+        ls -la $SCAN_RESULTS_DIR/ || echo "Директория не существует"
+        echo "📄 Содержимое bandit-results.json:"
+        cat $SCAN_RESULTS_DIR/bandit-results.json || echo "Файл не найден"
         
     - name: Run Semgrep
       run: |
+        echo "🔍 Запуск Semgrep..."
         semgrep ci --json --output $SCAN_RESULTS_DIR/semgrep-results.json
+        echo "📄 Проверка semgrep-results.json:"
+        ls -la $SCAN_RESULTS_DIR/semgrep-results.json || echo "Файл не найден"
         
     - name: Run Safety (dependency check)
       run: |
+        echo "🔍 Запуск Safety..."
         safety check --json --output $SCAN_RESULTS_DIR/safety-results.json || true
+        echo "📄 Проверка safety-results.json:"
+        ls -la $SCAN_RESULTS_DIR/safety-results.json || echo "Файл не найден"
         
     - name: Upload SAST results
       uses: actions/upload-artifact@v4
@@ -58,6 +69,7 @@ jobs:
         name: sast-results
         path: ${{ env.SCAN_RESULTS_DIR }}/
         retention-days: 7
+      if: always()
 
   # Build - Сборка приложения
   build:
@@ -284,6 +296,18 @@ jobs:
       with:
         path: all-results/
       continue-on-error: true
+      
+    - name: Debug downloaded artifacts
+      run: |
+        echo "🔍 Проверка загруженных артефактов:"
+        echo "📁 Содержимое all-results:"
+        ls -la all-results/ || echo "Директория не существует"
+        echo ""
+        echo "📁 Рекурсивный поиск файлов:"
+        find all-results/ -type f 2>/dev/null || echo "Файлы не найдены"
+        echo ""
+        echo "📁 Поиск JSON файлов:"
+        find all-results/ -name "*.json" 2>/dev/null || echo "JSON файлы не найдены"
         
     - name: Analyze security results
       run: |
