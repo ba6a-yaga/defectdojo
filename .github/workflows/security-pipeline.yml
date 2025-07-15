@@ -60,6 +60,7 @@ jobs:
   dast:
     name: DAST Analysis
     runs-on: ubuntu-latest
+    needs: [build]  # Добавляем зависимость от build
     
     steps:
     - name: Checkout code
@@ -67,7 +68,8 @@ jobs:
       
     - name: Start application for scanning
       run: |
-        docker-compose up -d
+        # Используем собранный образ
+        docker run -d --name test-app -p 8000:8000 ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
         sleep 30  # Ждем запуска приложения
         
     - name: Create ZAP rules file
@@ -80,24 +82,30 @@ jobs:
     - name: Setup OWASP ZAP
       uses: zaproxy/action-full-scan@v0.8.0
       with:
-        target: 'http://localhost:8000'  # Изменен порт на 8000
+        target: 'http://localhost:8000'
         rules_file_name: '.zap/rules.tsv'
         cmd_options: '-a'
-      continue-on-error: true  # Добавляем continue-on-error
+      continue-on-error: true
         
     - name: Run Nuclei
       uses: projectdiscovery/nuclei-action@main
       with:
-        target: 'http://localhost:8000'  # Изменен порт на 8000
+        target: 'http://localhost:8000'
         templates: 'cves,vulnerabilities,exposures'
-      continue-on-error: true  # Добавляем continue-on-error
+      continue-on-error: true
         
     - name: Upload DAST results
       uses: actions/upload-artifact@v4
       with:
         name: dast-results
         path: '*.json'
-      if: always()  # Всегда загружаем результаты
+      if: always()
+      
+    - name: Cleanup test container
+      if: always()
+      run: |
+        docker stop test-app || true
+        docker rm test-app || true
 
   # Security Checks
   security-checks:
@@ -134,7 +142,7 @@ jobs:
   security-gateway:
     name: Security Gateway
     runs-on: ubuntu-latest
-    needs: [sast, dast, security-checks]
+    needs: [sast, dast, security-checks, build]  # Добавляем build в зависимости
     if: always()  # Запускаем всегда, даже если предыдущие этапы упали
     
     steps:
