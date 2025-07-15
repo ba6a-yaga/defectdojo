@@ -215,13 +215,6 @@ jobs:
         ls -la .zap/ || echo "Директория .zap не найдена"
       if: always()
         
-    - name: Upload ZAP results manually
-      uses: actions/upload-artifact@v4
-      with:
-        name: zap-scan-results
-        path: 'report_json.json'
-      if: always()
-        
     - name: Upload DAST results
       uses: actions/upload-artifact@v4
       with:
@@ -342,8 +335,14 @@ jobs:
           # Переход в директорию проекта
           cd /opt/sib-Diplom-Track-DevSecOps
           
-          # Получение последних изменений
-          git pull origin main
+          # Настройка Git для работы с репозиторием
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          # Получение последних изменений из правильного репозитория
+          git remote set-url origin git@github.com:ba6a-yaga/defectdojo.git
+          git fetch origin
+          git reset --hard origin/main
           
           # Остановка текущих контейнеров
           docker-compose down
